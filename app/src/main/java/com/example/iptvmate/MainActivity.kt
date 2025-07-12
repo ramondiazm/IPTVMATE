@@ -88,17 +88,17 @@ fun TiviMateLayout(
     val categoriesCollapsed = focusedArea == "epg"
     val sidebarHidden = focusedArea == "epg" && categoriesCollapsed
     
-    // Animaciones para el ancho de los menús
+    // Animaciones para el ancho de los menús - más compactos como TiViMate
     val sidebarWidth by animateDpAsState(
         targetValue = when {
             sidebarHidden -> 0.dp
-            sidebarCollapsed -> 60.dp
-            else -> 280.dp
+            sidebarCollapsed -> 50.dp
+            else -> 180.dp
         },
         animationSpec = tween(300)
     )
     val categoriesWidth by animateDpAsState(
-        targetValue = if (categoriesCollapsed) 0.dp else 300.dp,
+        targetValue = if (categoriesCollapsed) 0.dp else 200.dp,
         animationSpec = tween(300)
     )
     
@@ -243,21 +243,22 @@ fun SidebarMenu(
         modifier = modifier
             .fillMaxHeight()
             .background(TiViMateSidebar)
-            .padding(if (isCollapsed) 8.dp else 16.dp),
-        verticalArrangement = Arrangement.spacedBy(if (isCollapsed) 8.dp else 6.dp)
+            .padding(if (isCollapsed) 4.dp else 8.dp),
+        verticalArrangement = Arrangement.Center, // Centrado verticalmente como TiViMate
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Logo TiviMate (solo cuando no está colapsado)
+        // Logo TiviMate (solo cuando no está colapsado) - más compacto
         if (!isCollapsed) {
             androidx.compose.material3.Text(
                 text = "tivimate",
                 color = TiViMateAccent,
-                fontSize = 24.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp, start = 8.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
         }
         
-        // Opciones del menú - más compactas
+        // Opciones del menú - centradas y compactas
         menuItems.forEachIndexed { index, item ->
             val isSelected = index == selectedIndex
             val isFocused = isFocused && isSelected
@@ -271,18 +272,18 @@ fun SidebarMenu(
                             isSelected -> TiViMateSelected
                             else -> Color.Transparent
                         },
-                        RoundedCornerShape(6.dp)
+                        RoundedCornerShape(4.dp)
                     )
                     .border(
-                        width = if (isFocused) 2.dp else 0.dp,
+                        width = if (isFocused) 1.dp else 0.dp,
                         color = if (isFocused) TiViMateFocus else Color.Transparent,
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(4.dp)
                     )
                     .clickable { onItemSelected(index) }
                     .focusable()
                     .onFocusChanged { if (it.isFocused) onFocusChanged() }
-                    .padding(if (isCollapsed) 6.dp else 12.dp),
-                contentAlignment = if (isCollapsed) Alignment.Center else Alignment.CenterStart
+                    .padding(if (isCollapsed) 4.dp else 8.dp),
+                contentAlignment = Alignment.Center
             ) {
                 if (isCollapsed) {
                     // Solo mostrar emoji cuando está colapsado
@@ -295,16 +296,21 @@ fun SidebarMenu(
                             4 -> "⚙️"
                             else -> "📺"
                         },
-                        fontSize = 18.sp
+                        fontSize = 16.sp
                     )
                 } else {
                     androidx.compose.material3.Text(
                         text = item,
                         color = if (isSelected) TiViMateText else TiViMateTextSecondary,
-                        fontSize = 14.sp,
-                        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                        textAlign = TextAlign.Center
                     )
                 }
+            }
+            
+            if (index < menuItems.size - 1) {
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }
@@ -324,8 +330,8 @@ fun CategoriesPanel(
         modifier = modifier
             .fillMaxHeight()
             .background(TiViMatePanel)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         itemsIndexed(categories) { index, category ->
             val isSelected = category == selectedCategory
@@ -340,22 +346,22 @@ fun CategoriesPanel(
                             isSelected -> TiViMateSelected
                             else -> Color.Transparent
                         },
-                        RoundedCornerShape(4.dp)
+                        RoundedCornerShape(3.dp)
                     )
                     .border(
-                        width = if (isFocusedItem) 2.dp else 0.dp,
+                        width = if (isFocusedItem) 1.dp else 0.dp,
                         color = if (isFocusedItem) TiViMateFocus else Color.Transparent,
-                        shape = RoundedCornerShape(4.dp)
+                        shape = RoundedCornerShape(3.dp)
                     )
                     .clickable { onCategorySelected(category) }
                     .focusable()
                     .onFocusChanged { if (it.isFocused) onFocusChanged() }
-                    .padding(10.dp)
+                    .padding(8.dp)
             ) {
                 androidx.compose.material3.Text(
                     text = category,
                     color = if (isSelected) TiViMateText else TiViMateTextSecondary,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -378,24 +384,25 @@ fun MainContentArea(
     onFocusChanged: (String) -> Unit,
     onChannelIndexChanged: (Int) -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(TiViMateBackground)
+            .padding(8.dp)
     ) {
-        // Área izquierda con mini player compacto e información del programa
-        Column(
+        // Área superior: Preview y descripción lado a lado
+        Row(
             modifier = Modifier
-                .width(400.dp)
-                .fillMaxHeight()
-                .padding(16.dp)
+                .fillMaxWidth()
+                .height(180.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Mini player compacto (alineado horizontalmente)
+            // Mini player compacto (lado izquierdo)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .width(320.dp)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(8.dp))
                     .background(Color.Black)
             ) {
                 selectedChannel?.let { channel ->
@@ -411,21 +418,22 @@ fun MainContentArea(
                             .align(Alignment.BottomStart)
                             .background(
                                 TiViMateOverlay,
-                                RoundedCornerShape(topEnd = 6.dp)
+                                RoundedCornerShape(topEnd = 4.dp)
                             )
-                            .padding(10.dp)
+                            .padding(6.dp)
                     ) {
-                        Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             androidx.compose.material3.Text(
                                 text = channel.name,
                                 color = TiViMateText,
-                                fontSize = 14.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
                             androidx.compose.material3.Text(
                                 text = "🔴 EN VIVO",
                                 color = TiViMateLive,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -441,30 +449,30 @@ fun MainContentArea(
                         ) {
                             androidx.compose.material3.Text(
                                 text = "📵",
-                                fontSize = 32.sp
+                                fontSize = 24.sp
                             )
                             androidx.compose.material3.Text(
                                 text = "Sin señal",
                                 color = TiViMateTextSecondary,
-                                fontSize = 14.sp
+                                fontSize = 12.sp
                             )
                         }
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Información del programa (debajo del player)
+            // Información del programa (lado derecho del preview)
             selectedProgram?.let { program ->
                 ProgramInfoPanel(
                     program = program,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
         
-        // EPG Grid y lista de canales (lado derecho)
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // EPG Grid ocupando todo el ancho (abajo)
         epgData?.let { epg ->
             NavigableEPGGrid(
                 channels = channels,
@@ -491,17 +499,19 @@ fun ProgramInfoPanel(
         modifier = modifier
             .background(
                 TiViMatePanel,
-                RoundedCornerShape(8.dp)
+                RoundedCornerShape(6.dp)
             )
-            .padding(12.dp)
+            .padding(10.dp)
     ) {
         // Título del programa
         androidx.compose.material3.Text(
             text = program.title,
             color = TiViMateText,
-            fontSize = 16.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 3.dp),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
         
         // Horario
@@ -509,8 +519,8 @@ fun ProgramInfoPanel(
         androidx.compose.material3.Text(
             text = "${program.startTime.format(timeFormatter)} — ${program.endTime.format(timeFormatter)}",
             color = TiViMateTextSecondary,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
+            fontSize = 11.sp,
+            modifier = Modifier.padding(bottom = 6.dp)
         )
         
         // Barra de progreso
@@ -532,16 +542,16 @@ fun ProgramInfoPanel(
             trackColor = TiViMateTextSecondary.copy(alpha = 0.3f)
         )
         
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         
         // Descripción
         program.description?.let { description ->
             androidx.compose.material3.Text(
                 text = description,
                 color = TiViMateTextSecondary,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                maxLines = 3,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -572,7 +582,7 @@ fun NavigableEPGGrid(
     
     Column(
         modifier = modifier
-            .padding(16.dp)
+            .padding(4.dp)
             .focusRequester(focusRequester)
             .focusable()
             .onKeyEvent { keyEvent ->
@@ -619,29 +629,29 @@ fun NavigableEPGGrid(
                 } else false
             }
     ) {
-        // Header con horarios
+        // Header con horarios - más compacto
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(TiViMatePanel)
-                .padding(8.dp)
+                .padding(4.dp)
         ) {
             // Espacio para números de canal
-            Spacer(modifier = Modifier.width(80.dp))
+            Spacer(modifier = Modifier.width(60.dp))
             
             // Horarios
             LazyRow {
                 items(epgData.timeSlots) { timeSlot ->
                     Box(
                         modifier = Modifier
-                            .width(120.dp)
-                            .padding(horizontal = 2.dp),
+                            .width(100.dp)
+                            .padding(horizontal = 1.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         androidx.compose.material3.Text(
                             text = timeSlot.time,
                             color = TiViMateText,
-                            fontSize = 12.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -649,9 +659,9 @@ fun NavigableEPGGrid(
             }
         }
         
-        // Grid de canales y programas
+        // Grid de canales y programas - más compacto
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             itemsIndexed(channels) { index, channel ->
                 val isChannelSelected = index == selectedChannelIndex
@@ -660,42 +670,42 @@ fun NavigableEPGGrid(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(40.dp)
                         .background(
                             if (isChannelSelected) TiViMateSelected else TiViMateBackground,
-                            RoundedCornerShape(4.dp)
+                            RoundedCornerShape(3.dp)
                         )
                         .border(
                             width = if (isChannelSelected && isFocused) 1.dp else 0.dp,
                             color = if (isChannelSelected && isFocused) TiViMateFocus else Color.Transparent,
-                            shape = RoundedCornerShape(4.dp)
+                            shape = RoundedCornerShape(3.dp)
                         )
-                        .padding(6.dp),
+                        .padding(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Número y logo del canal
+                    // Número y logo del canal - más compacto
                     Row(
-                        modifier = Modifier.width(80.dp),
+                        modifier = Modifier.width(60.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         androidx.compose.material3.Text(
                             text = channel.number.toString(),
                             color = if (isChannelSelected) TiViMateText else TiViMateTextSecondary,
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.width(24.dp)
+                            modifier = Modifier.width(20.dp)
                         )
                         
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(24.dp)
                                 .background(TiViMateTextSecondary.copy(alpha = 0.3f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             androidx.compose.material3.Text(
                                 text = channel.name.take(2).uppercase(),
                                 color = TiViMateText,
-                                fontSize = 10.sp,
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -703,7 +713,7 @@ fun NavigableEPGGrid(
                     
                     // Programas en grid horizontal
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         itemsIndexed(channelPrograms) { programIndex, program ->
                             val isProgramSelected = isChannelSelected && programIndex == selectedProgramIndex
@@ -711,7 +721,7 @@ fun NavigableEPGGrid(
                                 program = program,
                                 isChannelSelected = isChannelSelected,
                                 isProgramSelected = isProgramSelected,
-                                modifier = Modifier.width(120.dp)
+                                modifier = Modifier.width(100.dp)
                             )
                         }
                     }
@@ -746,7 +756,7 @@ fun ProgramCell(
     
     Box(
         modifier = modifier
-            .fillMaxHeight()
+            .height(32.dp)
             .background(
                 backgroundColor,
                 RoundedCornerShape(3.dp)
@@ -756,7 +766,7 @@ fun ProgramCell(
                 color = borderColor,
                 shape = RoundedCornerShape(3.dp)
             )
-            .padding(6.dp),
+            .padding(4.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Column {
@@ -767,9 +777,9 @@ fun ProgramCell(
                     isCurrentProgram -> TiViMateText
                     else -> TiViMateTextSecondary
                 },
-                fontSize = 11.sp,
+                fontSize = 9.sp,
                 fontWeight = if (isProgramSelected || isCurrentProgram) FontWeight.Medium else FontWeight.Normal,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             
@@ -781,7 +791,7 @@ fun ProgramCell(
                     isCurrentProgram -> TiViMateTextSecondary
                     else -> TiViMateTextSecondary.copy(alpha = 0.7f)
                 },
-                fontSize = 9.sp
+                fontSize = 7.sp
             )
         }
     }
