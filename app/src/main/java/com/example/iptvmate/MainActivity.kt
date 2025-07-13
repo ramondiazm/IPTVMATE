@@ -191,7 +191,9 @@ fun TiviMateLayout(
                                 }
                                 "categories" -> {
                                     val newIndex = (selectedCategoryIndex - 1).coerceAtLeast(0)
-                                    onCategorySelected(categories[newIndex])
+                                    if (newIndex < categories.size) {
+                                        onCategorySelected(categories[newIndex])
+                                    }
                                     true
                                 }
                                 "channels", "epg" -> {
@@ -211,7 +213,9 @@ fun TiviMateLayout(
                                 }
                                 "categories" -> {
                                     val newIndex = (selectedCategoryIndex + 1).coerceAtMost(categories.size - 1)
-                                    onCategorySelected(categories[newIndex])
+                                    if (newIndex < categories.size) {
+                                        onCategorySelected(categories[newIndex])
+                                    }
                                     true
                                 }
                                 "channels", "epg" -> {
@@ -939,19 +943,18 @@ fun IPTVMainScreen() {
     
     val m3uUrl = "https://opop.pro/XLE8sWYgsUXvNp"
     
-    // Categorías disponibles
-    val categories = listOf(
-        "Favoritos",
-        "Todos los canales", 
-        "TV NACIONAL",
-        "ENTRETENIMIENTO",
-        "CINE",
-        "CULTURA",
-        "NIÑOS",
-        "MÚSICA",
-        "DEPORTES",
-        "RELIGIÓN"
-    )
+    // Cargar todos los canales una vez
+    var allChannels by remember { mutableStateOf<List<Channel>>(emptyList()) }
+    
+    // Categorías disponibles - filtrar solo las que tienen canales
+    val availableCategories = remember(allChannels) {
+        val baseCategories = listOf("Favoritos", "Todos los canales")
+        val groupCategories = allChannels.mapNotNull { it.group }.distinct().sorted()
+        Log.d("IPTV", "Grupos encontrados en M3U: $groupCategories")
+        baseCategories + groupCategories
+    }
+    
+    val categories = availableCategories
     
     // Opciones del menú lateral
     val menuItems = listOf(
@@ -961,16 +964,18 @@ fun IPTVMainScreen() {
         "Mi lista"
     )
     
-    // Cargar todos los canales una vez
-    var allChannels by remember { mutableStateOf<List<Channel>>(emptyList()) }
-    
     // Filtrar canales por categoría seleccionada
     val filteredChannels = remember(allChannels, selectedCategory) {
-        when (selectedCategory) {
+        val filtered = when (selectedCategory) {
             "Todos los canales" -> allChannels
             "Favoritos" -> allChannels.filter { it.isFavorite ?: false }
             else -> allChannels.filter { it.group?.equals(selectedCategory, ignoreCase = true) == true }
         }
+        Log.d("IPTV", "Categoría seleccionada: $selectedCategory, Canales filtrados: ${filtered.size}")
+        if (filtered.isEmpty() && selectedCategory != "Favoritos") {
+            Log.w("IPTV", "No hay canales para la categoría: $selectedCategory. Grupos disponibles: ${allChannels.map { it.group }.distinct()}")
+        }
+        filtered
     }
     
     // Actualizar channels cuando cambie el filtro
@@ -985,6 +990,15 @@ fun IPTVMainScreen() {
             epgData?.let { epg ->
                 selectedProgram = epgRepository.getCurrentProgram(channel.id, epg.programs)
             }
+        }
+    }
+    
+    // Sincronizar selectedCategoryIndex con selectedCategory
+    LaunchedEffect(selectedCategory, categories) {
+        val index = categories.indexOf(selectedCategory)
+        if (index >= 0) {
+            selectedCategoryIndex = index
+            Log.d("IPTV", "Sincronizando índice de categoría: $selectedCategory -> $index")
         }
     }
 
