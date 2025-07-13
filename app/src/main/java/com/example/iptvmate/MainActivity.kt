@@ -84,6 +84,19 @@ fun TiviMateLayout(
     onChannelIndexChanged: (Int) -> Unit,
     onFocusChanged: (String) -> Unit
 ) {
+    // FocusRequesters para controlar el focus manualmente
+    val menuFocusRequester = remember { FocusRequester() }
+    val categoriesFocusRequester = remember { FocusRequester() }
+    val channelsFocusRequester = remember { FocusRequester() }
+    
+    // Efecto para forzar el focus cuando cambia focusedArea
+    LaunchedEffect(focusedArea) {
+        when (focusedArea) {
+            "menu" -> menuFocusRequester.requestFocus()
+            "categories" -> categoriesFocusRequester.requestFocus()
+            "channels", "epg" -> channelsFocusRequester.requestFocus()
+        }
+    }
     // SISTEMA DE NAVEGACIÓN ROBUSTO - 3 ESTADOS CLAROS
     // Estado 0: Menú completo abierto (íconos + texto)
     // Estado 1: Menú colapsado a íconos + categorías visibles
@@ -239,6 +252,7 @@ fun TiviMateLayout(
             onItemSelected = onMenuSelected,
             onFocusChanged = { onFocusChanged("menu") },
             isCollapsed = isMenuCollapsed,
+            focusRequester = menuFocusRequester,
             modifier = Modifier
                 .width(sidebarWidth)
                 .clipToBounds() // Oculta contenido cuando width = 0
@@ -252,6 +266,7 @@ fun TiviMateLayout(
             isFocused = focusedArea == "categories",
             onCategorySelected = onCategorySelected,
             onFocusChanged = { onFocusChanged("categories") },
+            focusRequester = categoriesFocusRequester,
             modifier = Modifier
                 .width(categoriesWidth)
                 .clipToBounds() // Oculta contenido cuando width = 0
@@ -273,7 +288,8 @@ fun TiviMateLayout(
                     onChannelSelected(channels[index])
                 }
             },
-            onFocusChanged = onFocusChanged
+            onFocusChanged = onFocusChanged,
+            focusRequester = channelsFocusRequester
         )
     }
 }
@@ -286,6 +302,7 @@ fun SidebarMenu(
     onItemSelected: (Int) -> Unit,
     onFocusChanged: () -> Unit,
     isCollapsed: Boolean = false,
+    focusRequester: FocusRequester = remember { FocusRequester() },
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -335,6 +352,7 @@ fun SidebarMenu(
                         )
                         .clickable { onItemSelected(index) }
                         .focusable()
+                        .let { if (isSelected) it.focusRequester(focusRequester) else it }
                         .onFocusChanged { if (it.isFocused) onFocusChanged() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -370,6 +388,7 @@ fun SidebarMenu(
                         )
                         .clickable { onItemSelected(index) }
                         .focusable()
+                        .let { if (isSelected) it.focusRequester(focusRequester) else it }
                         .onFocusChanged { if (it.isFocused) onFocusChanged() }
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
@@ -443,6 +462,7 @@ fun CategoriesPanel(
     isFocused: Boolean,
     onCategorySelected: (String) -> Unit,
     onFocusChanged: () -> Unit,
+    focusRequester: FocusRequester = remember { FocusRequester() },
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -479,6 +499,7 @@ fun CategoriesPanel(
                      )
                      .clickable { onCategorySelected(category) }
                      .focusable()
+                     .let { if (isSelected) it.focusRequester(focusRequester) else it }
                      .onFocusChanged { if (it.isFocused) onFocusChanged() }
                      .padding(vertical = 6.dp, horizontal = 12.dp)
              ) {
@@ -509,7 +530,8 @@ fun MainContentArea(
     focusedArea: String,
     onChannelSelected: (Channel) -> Unit,
     onFocusChanged: (String) -> Unit,
-    onChannelIndexChanged: (Int) -> Unit
+    onChannelIndexChanged: (Int) -> Unit,
+    focusRequester: FocusRequester = remember { FocusRequester() }
 ) {
     Column(
         modifier = Modifier
@@ -565,6 +587,7 @@ fun MainContentArea(
                 onChannelSelected = onChannelSelected,
                 onChannelIndexChanged = onChannelIndexChanged,
                 onFocusChanged = onFocusChanged,
+                focusRequester = focusRequester,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -673,10 +696,10 @@ fun NavigableEPGGrid(
     onChannelSelected: (Channel) -> Unit,
     onChannelIndexChanged: (Int) -> Unit,
     onFocusChanged: (String) -> Unit,
+    focusRequester: FocusRequester = remember { FocusRequester() },
     modifier: Modifier = Modifier
 ) {
     var selectedProgramIndex by remember { mutableStateOf(0) }
-    val focusRequester = remember { FocusRequester() }
     
     LaunchedEffect(isFocused) {
         if (isFocused) {
