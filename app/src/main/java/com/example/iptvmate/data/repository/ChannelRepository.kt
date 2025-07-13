@@ -7,40 +7,67 @@ import java.net.URL
 
 class ChannelRepository {
     suspend fun fetchChannelsFromM3U(m3uUrl: String): List<Channel> = withContext(Dispatchers.IO) {
-        val channels = mutableListOf<Channel>()
-        val lines = URL(m3uUrl).readText().lines()
-        var currentName = ""
-        var currentLogo: String? = null
-        var currentGroup: String? = null
-        var currentEpgId: String? = null
-        var number = 1
-        for (i in lines.indices) {
-            val line = lines[i]
-            if (line.startsWith("#EXTINF")) {
-                val nameMatch = Regex("tvg-name=\\\"(.*?)\\\"").find(line)
-                val logoMatch = Regex("tvg-logo=([\"`'])(.*?)\\1").find(line) // Soporta comillas dobles, simples o invertidas
-                val groupMatch = Regex("group-title=([\"`'])(.*?)\\1").find(line)
-                val epgIdMatch = Regex("tvg-id=([\"`'])(.*?)\\1").find(line)
-                currentName = nameMatch?.groupValues?.get(1) ?: line.substringAfter(",").trim()
-                currentLogo = logoMatch?.groupValues?.get(2)
-                currentGroup = groupMatch?.groupValues?.get(2)
-                currentEpgId = epgIdMatch?.groupValues?.get(2)
-            } else if (line.isNotBlank() && !line.startsWith("#")) {
-                // Es la URL del stream
-                channels.add(
-                    Channel(
-                        id = currentName + number,
-                        name = currentName,
-                        logoUrl = currentLogo,
-                        number = number++,
-                        group = currentGroup,
-                        epgId = currentEpgId,
-                        streamUrl = line.trim(),
-                        isFavorite = false // Por defecto no es favorito
-                    )
-                )
+        try {
+            val channels = mutableListOf<Channel>()
+            val content = URL(m3uUrl).readText()
+            val lines = content.lines()
+            
+            var currentName = ""
+            var currentLogo: String? = null
+            var currentGroup: String? = null
+            var currentEpgId: String? = null
+            var number = 1
+            
+            for (i in lines.indices) {
+                val line = lines[i].trim()
+                if (line.startsWith("#EXTINF")) {
+                    // Parsing mejorado que maneja atributos con y sin comillas
+                    currentName = extractAttribute(line, "tvg-name") ?: line.substringAfter(",").trim()
+                    currentLogo = extractAttribute(line, "tvg-logo")
+                    currentGroup = extractAttribute(line, "group-title")
+                    currentEpgId = extractAttribute(line, "tvg-ID") ?: extractAttribute(line, "tvg-id")
+                } else if (line.isNotBlank() && !line.startsWith("#")) {
+                    // Es la URL del stream
+                    if (currentName.isNotEmpty()) {
+                        channels.add(
+                            Channel(
+                                id = "$currentName$number",
+                                name = currentName,
+                                logoUrl = currentLogo,
+                                number = number++,
+                                group = currentGroup,
+                                epgId = currentEpgId,
+                                streamUrl = line,
+                                isFavorite = false
+                            )
+                        )
+                    }
+                    // Reset para el siguiente canal
+                    currentName = ""
+                    currentLogo = null
+                    currentGroup = null
+                    currentEpgId = null
+                }
             }
+            
+            println("ChannelRepository: Parsed ${channels.size} channels")
+            channels
+        } catch (e: Exception) {
+            println("ChannelRepository Error: ${e.message}")
+            e.printStackTrace()
+            throw e
         }
-        channels
+    }
+    
+    private fun extractAttribute(line: String, attributeName: String): String? {
+        // Busca atributos con comillas dobles
+        val quotedRegex = Regex("$attributeName=\"([^\"]*)\"", RegexOption.IGNORE_CASE)
+        quotedRegex.find(line)?.let { return it.groupValues[1] }
+        
+        // Busca atributos sin comillas (hasta el siguiente espacio o final de línea)
+        val unquotedRegex = Regex("$attributeName=([^\\s,]+)", RegexOption.IGNORE_CASE)
+        unquotedRegex.find(line)?.let { return it.groupValues[1] }
+        
+        return null
     }
 }
