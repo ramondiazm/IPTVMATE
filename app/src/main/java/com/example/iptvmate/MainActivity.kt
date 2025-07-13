@@ -299,7 +299,10 @@ fun SidebarMenu(
         modifier = modifier
             .fillMaxHeight()
             .background(TiViMatePanel) // Fondo del menú principal
-            .padding(if (isCollapsed) 8.dp else 12.dp),
+            .padding(if (isCollapsed) 8.dp else 12.dp)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onFocusChanged { if (it.isFocused) onFocusChanged() },
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = if (isCollapsed) Alignment.CenterHorizontally else Alignment.Start
     ) {
@@ -340,10 +343,7 @@ fun SidebarMenu(
                             color = if (isFocusedItem) TiViMateFocus else Color.Transparent,
                             shape = RoundedCornerShape(4.dp)
                         )
-                        .clickable { onItemSelected(index) }
-                        .focusable()
-                        .let { if (isSelected) it.focusRequester(focusRequester) else it }
-                        .onFocusChanged { if (it.isFocused) onFocusChanged() },
+                        .clickable { onItemSelected(index) },
                     contentAlignment = Alignment.Center
                 ) {
                     androidx.compose.material3.Text(
@@ -377,9 +377,6 @@ fun SidebarMenu(
                             shape = RoundedCornerShape(4.dp)
                         )
                         .clickable { onItemSelected(index) }
-                        .focusable()
-                        .let { if (isSelected) it.focusRequester(focusRequester) else it }
-                        .onFocusChanged { if (it.isFocused) onFocusChanged() }
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
                     Row(
@@ -458,7 +455,10 @@ fun CategoriesPanel(
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .padding(12.dp),
+            .padding(12.dp)
+            .focusRequester(focusRequester)
+            .focusable()
+            .onFocusChanged { if (it.isFocused) onFocusChanged() },
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         // Spacer para alinear con el menú principal
@@ -488,9 +488,6 @@ fun CategoriesPanel(
                          shape = RoundedCornerShape(4.dp)
                      )
                      .clickable { onCategorySelected(category) }
-                     .focusable()
-                     .let { if (isSelected) it.focusRequester(focusRequester) else it }
-                     .onFocusChanged { if (it.isFocused) onFocusChanged() }
                      .padding(vertical = 6.dp, horizontal = 12.dp)
              ) {
                  androidx.compose.material3.Text(
