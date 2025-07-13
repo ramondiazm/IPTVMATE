@@ -142,7 +142,7 @@ fun TiviMateLayout(
                 if (keyEvent.type == KeyEventType.KeyDown) {
                     when (keyEvent.key) {
                         Key.DirectionLeft -> {
-                            // SECUENCIA INVERSA: grid -> categorías -> menú
+                            // Solo cambiar área si estamos en el borde izquierdo del área actual
                             when (focusedArea) {
                                 "channels", "epg" -> {
                                     // Desde grid/EPG volver a categorías
@@ -155,14 +155,14 @@ fun TiviMateLayout(
                                     true
                                 }
                                 "menu" -> {
-                                    // Ya en menú, no ir más atrás
+                                    // En menú, navegar dentro del menú (no cambiar área)
                                     false
                                 }
                                 else -> false
                             }
                         }
                         Key.DirectionRight -> {
-                            // SECUENCIA DIRECTA: menú -> categorías -> grid
+                            // Solo cambiar área si estamos en el borde derecho del área actual
                             when (focusedArea) {
                                 "menu" -> {
                                     // Desde menú ir a categorías
@@ -175,13 +175,14 @@ fun TiviMateLayout(
                                     true
                                 }
                                 "channels", "epg" -> {
-                                    // Ya en grid, no ir más adelante
+                                    // En grid, navegar dentro del grid (no cambiar área)
                                     false
                                 }
                                 else -> false
                             }
                         }
                         Key.DirectionUp -> {
+                            // Navegación vertical dentro de cada área
                             when (focusedArea) {
                                 "menu" -> {
                                     val newIndex = (selectedMenuIndex - 1).coerceAtLeast(0)
@@ -190,23 +191,18 @@ fun TiviMateLayout(
                                 }
                                 "categories" -> {
                                     val newIndex = (selectedCategoryIndex - 1).coerceAtLeast(0)
-                                    if (newIndex < categories.size) {
-                                        onCategorySelected(categories[newIndex])
-                                    }
+                                    onCategorySelected(categories[newIndex])
                                     true
                                 }
-                                "channels" -> {
-                                    val newIndex = (selectedChannelIndex - 1).coerceAtLeast(0)
-                                    if (newIndex < channels.size) {
-                                        onChannelIndexChanged(newIndex)
-                                        onChannelSelected(channels[newIndex])
-                                    }
-                                    true
+                                "channels", "epg" -> {
+                                    // Delegar navegación vertical al NavigableEPGGrid
+                                    false
                                 }
                                 else -> false
                             }
                         }
                         Key.DirectionDown -> {
+                            // Navegación vertical dentro de cada área
                             when (focusedArea) {
                                 "menu" -> {
                                     val newIndex = (selectedMenuIndex + 1).coerceAtMost(menuItems.size - 1)
@@ -215,18 +211,12 @@ fun TiviMateLayout(
                                 }
                                 "categories" -> {
                                     val newIndex = (selectedCategoryIndex + 1).coerceAtMost(categories.size - 1)
-                                    if (newIndex < categories.size) {
-                                        onCategorySelected(categories[newIndex])
-                                    }
+                                    onCategorySelected(categories[newIndex])
                                     true
                                 }
-                                "channels" -> {
-                                    val newIndex = (selectedChannelIndex + 1).coerceAtMost(channels.size - 1)
-                                    if (newIndex < channels.size) {
-                                        onChannelIndexChanged(newIndex)
-                                        onChannelSelected(channels[newIndex])
-                                    }
-                                    true
+                                "channels", "epg" -> {
+                                    // Delegar navegación vertical al NavigableEPGGrid
+                                    false
                                 }
                                 else -> false
                             }
@@ -734,22 +724,29 @@ fun NavigableEPGGrid(
                         Key.DirectionLeft -> {
                             if (focusedArea == "epg" && selectedProgramIndex > 0) {
                                 selectedProgramIndex--
+                                true
                             } else {
-                                onFocusChanged("categories")
+                                // Delegar navegación izquierda al componente padre
+                                false
                             }
-                            true
                         }
                         Key.DirectionRight -> {
                             if (focusedArea == "channels") {
                                 onFocusChanged("epg")
+                                true
                             } else if (focusedArea == "epg") {
                                 val currentChannel = channels.getOrNull(selectedChannelIndex)
                                 val programs = currentChannel?.let { epgData.programs[it.id] } ?: emptyList()
                                 if (selectedProgramIndex < programs.size - 1) {
                                     selectedProgramIndex++
+                                    true
+                                } else {
+                                    // Ya en el último programa, no navegar más
+                                    false
                                 }
+                            } else {
+                                false
                             }
-                            true
                         }
                         else -> false
                     }
