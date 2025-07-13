@@ -3,13 +3,30 @@ package com.example.iptvmate.data.repository
 import com.example.iptvmate.domain.model.Channel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
 import java.net.URL
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class ChannelRepository {
     suspend fun fetchChannelsFromM3U(m3uUrl: String): List<Channel> = withContext(Dispatchers.IO) {
         try {
             val channels = mutableListOf<Channel>()
-            val content = URL(m3uUrl).readText()
+            
+            // Crear conexión HTTP con headers apropiados
+            val url = URL(m3uUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; Android TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            connection.setRequestProperty("Accept", "*/*")
+            connection.connectTimeout = 10000
+            connection.readTimeout = 30000
+            
+            val content = BufferedReader(InputStreamReader(connection.inputStream)).use { reader ->
+                reader.readText()
+            }
+            connection.disconnect()
+            
             val lines = content.lines()
             
             var currentName = ""
