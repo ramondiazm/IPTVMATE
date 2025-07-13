@@ -83,37 +83,35 @@ fun TiviMateLayout(
     onChannelIndexChanged: (Int) -> Unit,
     onFocusChanged: (String) -> Unit
 ) {
-    // Estados de colapso para menús
-    var isMenuCollapsed by remember { mutableStateOf(false) }
-    var areCategoriesCollapsed by remember { mutableStateOf(false) }
-    
-    // Lógica de colapso basada en el área enfocada
-    LaunchedEffect(focusedArea) {
-        when (focusedArea) {
-            "menu" -> {
-                isMenuCollapsed = false
-                areCategoriesCollapsed = false
-            }
-            "categories" -> {
-                isMenuCollapsed = true
-                areCategoriesCollapsed = false
-            }
-            "channels", "epg" -> {
-                isMenuCollapsed = true
-                areCategoriesCollapsed = true
-            }
-        }
+    // Estados de navegación tipo TiViMate
+    // 0 = Todo visible, 1 = Solo categorías, 2 = Solo contenido
+    val navigationState = when (focusedArea) {
+        "menu" -> 0
+        "categories" -> 1
+        "channels", "epg" -> 2
+        else -> 0
     }
     
-    // Animaciones fluidas para el colapso
+    // Animaciones fluidas para el colapso total
     val sidebarWidth by animateDpAsState(
-        targetValue = if (isMenuCollapsed) 60.dp else 180.dp,
-        animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        targetValue = when (navigationState) {
+            0 -> 180.dp  // Menú completo visible
+            1 -> 0.dp    // Menú oculto, categorías visibles
+            2 -> 0.dp    // Todo oculto
+            else -> 180.dp
+        },
+        animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
         label = "sidebarWidth"
     )
+    
     val categoriesWidth by animateDpAsState(
-        targetValue = if (areCategoriesCollapsed) 0.dp else 200.dp,
-        animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        targetValue = when (navigationState) {
+            0 -> 200.dp  // Categorías visibles
+            1 -> 200.dp  // Categorías visibles
+            2 -> 0.dp    // Categorías ocultas
+            else -> 200.dp
+        },
+        animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
         label = "categoriesWidth"
     )
     
@@ -126,29 +124,43 @@ fun TiviMateLayout(
                     when (keyEvent.key) {
                         Key.DirectionLeft -> {
                             when (focusedArea) {
-                                "categories" -> onFocusChanged("menu")
-                                "channels", "epg" -> onFocusChanged("menu") // Regreso directo a menú
+                                "categories" -> {
+                                    onFocusChanged("menu")
+                                    true
+                                }
+                                "channels", "epg" -> {
+                                    onFocusChanged("categories")
+                                    true
+                                }
+                                else -> false
                             }
-                            true
                         }
                         Key.DirectionRight -> {
                             when (focusedArea) {
-                                "menu" -> onFocusChanged("categories")
-                                "categories" -> onFocusChanged("channels") // Directo a EPG
+                                "menu" -> {
+                                    onFocusChanged("categories")
+                                    true
+                                }
+                                "categories" -> {
+                                    onFocusChanged("channels")
+                                    true
+                                }
+                                else -> false
                             }
-                            true
                         }
                         Key.DirectionUp -> {
                             when (focusedArea) {
                                 "menu" -> {
                                     val newIndex = (selectedMenuIndex - 1).coerceAtLeast(0)
                                     onMenuSelected(newIndex)
+                                    true
                                 }
                                 "categories" -> {
                                     val newIndex = (selectedCategoryIndex - 1).coerceAtLeast(0)
                                     if (newIndex < categories.size) {
                                         onCategorySelected(categories[newIndex])
                                     }
+                                    true
                                 }
                                 "channels" -> {
                                     val newIndex = (selectedChannelIndex - 1).coerceAtLeast(0)
@@ -156,21 +168,24 @@ fun TiviMateLayout(
                                         onChannelIndexChanged(newIndex)
                                         onChannelSelected(channels[newIndex])
                                     }
+                                    true
                                 }
+                                else -> false
                             }
-                            true
                         }
                         Key.DirectionDown -> {
                             when (focusedArea) {
                                 "menu" -> {
                                     val newIndex = (selectedMenuIndex + 1).coerceAtMost(menuItems.size - 1)
                                     onMenuSelected(newIndex)
+                                    true
                                 }
                                 "categories" -> {
                                     val newIndex = (selectedCategoryIndex + 1).coerceAtMost(categories.size - 1)
                                     if (newIndex < categories.size) {
                                         onCategorySelected(categories[newIndex])
                                     }
+                                    true
                                 }
                                 "channels" -> {
                                     val newIndex = (selectedChannelIndex + 1).coerceAtMost(channels.size - 1)
@@ -178,9 +193,10 @@ fun TiviMateLayout(
                                         onChannelIndexChanged(newIndex)
                                         onChannelSelected(channels[newIndex])
                                     }
+                                    true
                                 }
+                                else -> false
                             }
-                            true
                         }
                         Key.Enter, Key.DirectionCenter -> {
                             // Expandir a fullscreen cuando se presiona OK en un canal
@@ -202,7 +218,7 @@ fun TiviMateLayout(
             isFocused = focusedArea == "menu",
             onItemSelected = onMenuSelected,
             onFocusChanged = { onFocusChanged("menu") },
-            isCollapsed = isMenuCollapsed,
+            isCollapsed = navigationState == 2,
             modifier = Modifier.width(sidebarWidth)
         )
         
@@ -301,16 +317,16 @@ fun SidebarMenu(
                     contentAlignment = Alignment.Center
                 ) {
                     androidx.compose.material3.Text(
-                        text = when(index) {
-                            0 -> "🔍" // Buscar
-                            1 -> "📺" // TV
-                            2 -> "⏺" // Grabaciones
-                            3 -> "📋" // Mi lista
-                            else -> "📺"
-                        },
-                        fontSize = 16.sp,
-                        color = if (isSelected) TiViMateText else TiViMateTextSecondary
-                    )
+                            text = when(index) {
+                                0 -> "⌕" // Buscar
+                                1 -> "⬚" // TV
+                                2 -> "●" // Grabaciones
+                                3 -> "☰" // Mi lista
+                                else -> "⬚"
+                            },
+                            fontSize = 16.sp,
+                            color = if (isSelected) TiViMateText else TiViMateTextSecondary
+                        )
                 }
             } else {
                 // Modo expandido: íconos + texto
@@ -342,11 +358,11 @@ fun SidebarMenu(
                         // Íconos minimalistas tipo TiViMate
                         androidx.compose.material3.Text(
                             text = when(index) {
-                                0 -> "🔍" // Buscar
-                                1 -> "📺" // TV
-                                2 -> "⏺" // Grabaciones
-                                3 -> "📋" // Mi lista
-                                else -> "📺"
+                                0 -> "⌕" // Buscar
+                                1 -> "⬚" // TV
+                                2 -> "●" // Grabaciones
+                                3 -> "☰" // Mi lista
+                                else -> "⬚"
                             },
                             fontSize = 14.sp,
                             color = if (isSelected) TiViMateText else TiViMateTextSecondary
@@ -381,7 +397,7 @@ fun SidebarMenu(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     androidx.compose.material3.Text(
-                        text = "⚙️",
+                        text = "⚙",
                         fontSize = 14.sp,
                         color = TiViMateTextSecondary
                     )
@@ -900,10 +916,10 @@ fun IPTVMainScreen() {
     
     // Opciones del menú lateral
     val menuItems = listOf(
-        "🔍 Buscar",
-        "📺 TV",
-        "📹 Grabaciones", 
-        "📋 Mi lista"
+        "Buscar",
+        "TV",
+        "Grabaciones", 
+        "Mi lista"
     )
     
     LaunchedEffect(Unit) {
