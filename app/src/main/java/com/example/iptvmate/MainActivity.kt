@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -230,32 +231,31 @@ fun TiviMateLayout(
             }
             .focusable()
     ) {
-        // Sidebar izquierdo
-        // Menú lateral - siempre visible cuando sidebarWidth > 0
-        if (sidebarWidth > 0.dp) {
-            SidebarMenu(
-                menuItems = menuItems,
-                selectedIndex = selectedMenuIndex,
-                isFocused = focusedArea == "menu",
-                onItemSelected = onMenuSelected,
-                onFocusChanged = { onFocusChanged("menu") },
-                isCollapsed = isMenuCollapsed,
-                modifier = Modifier.width(sidebarWidth)
-            )
-        }
+        // Sidebar izquierdo - SIEMPRE presente para mantener focus
+        SidebarMenu(
+            menuItems = menuItems,
+            selectedIndex = selectedMenuIndex,
+            isFocused = focusedArea == "menu",
+            onItemSelected = onMenuSelected,
+            onFocusChanged = { onFocusChanged("menu") },
+            isCollapsed = isMenuCollapsed,
+            modifier = Modifier
+                .width(sidebarWidth)
+                .clipToBounds() // Oculta contenido cuando width = 0
+        )
         
-        // Panel central de categorías
-        if (categoriesWidth > 0.dp) {
-            CategoriesPanel(
-                categories = categories,
-                selectedCategory = selectedCategory,
-                selectedIndex = selectedCategoryIndex,
-                isFocused = focusedArea == "categories",
-                onCategorySelected = onCategorySelected,
-                onFocusChanged = { onFocusChanged("categories") },
-                modifier = Modifier.width(categoriesWidth)
-            )
-        }
+        // Panel central de categorías - SIEMPRE presente para mantener focus
+        CategoriesPanel(
+            categories = categories,
+            selectedCategory = selectedCategory,
+            selectedIndex = selectedCategoryIndex,
+            isFocused = focusedArea == "categories",
+            onCategorySelected = onCategorySelected,
+            onFocusChanged = { onFocusChanged("categories") },
+            modifier = Modifier
+                .width(categoriesWidth)
+                .clipToBounds() // Oculta contenido cuando width = 0
+        )
         
         // Área principal con EPG y mini player
         MainContentArea(
