@@ -1,6 +1,22 @@
-# IPTV Mate - Professional Android TV Application
+# IPTVMATE
 
-🚀 **Una aplicación IPTV moderna y profesional para Android TV inspirada en TiViMate**
+Un reproductor IPTV moderno para Android TV construido con Jetpack Compose for TV.
+
+## Características Implementadas ✅
+
+- **Interfaz moderna** inspirada en TiviMate con navegación por áreas
+- **Reproductor real** con ExoPlayer integrado para streams en vivo
+- **Filtrado por categorías** funcional que actualiza canales y EPG
+- **Navegación vertical** corregida entre categorías
+- **Carga de datos reales** desde M3U y EPG en tiempo real
+- **EPG (Guía Electrónica de Programas)** con información actual
+- **Soporte para múltiples formatos** (HLS, UDP, HTTP, DASH)
+- **Sistema de favoritos** preparado (propiedad isFavorite)
+
+## Fuentes de Datos Reales
+
+- **M3U**: https://opop.pro/XLE8sWYgsUXvNp
+- **EPG (XMLTV)**: https://opop.pro/22AWtsbCszVyW
 
 ## 📱 Características Principales
 
