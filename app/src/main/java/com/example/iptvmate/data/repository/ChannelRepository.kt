@@ -35,7 +35,8 @@ class ChannelRepository {
                         number = number++,
                         group = currentGroup,
                         epgId = currentEpgId,
-                        streamUrl = line.trim()
+                        streamUrl = line.trim(),
+                        isFavorite = false // Por defecto no es favorito
                     )
                 )
             }

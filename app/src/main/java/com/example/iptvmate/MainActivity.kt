@@ -964,25 +964,45 @@ fun IPTVMainScreen() {
         "Mi lista"
     )
     
+    // Cargar todos los canales una vez
+    var allChannels by remember { mutableStateOf<List<Channel>>(emptyList()) }
+    
+    // Filtrar canales por categoría seleccionada
+    val filteredChannels = remember(allChannels, selectedCategory) {
+        when (selectedCategory) {
+            "Todos los canales" -> allChannels
+            "Favoritos" -> allChannels.filter { it.isFavorite ?: false }
+            else -> allChannels.filter { it.group?.equals(selectedCategory, ignoreCase = true) == true }
+        }
+    }
+    
+    // Actualizar channels cuando cambie el filtro
+    LaunchedEffect(filteredChannels) {
+        channels = filteredChannels
+        // Resetear selección de canal cuando cambie la categoría
+        selectedChannel = filteredChannels.firstOrNull()
+        selectedChannelIndex = 0
+        
+        // Actualizar programa seleccionado
+        selectedChannel?.let { channel ->
+            epgData?.let { epg ->
+                selectedProgram = epgRepository.getCurrentProgram(channel.id, epg.programs)
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         try {
             Log.d("IPTV", "Iniciando carga de canales desde: $m3uUrl")
             val loaded = channelRepository.fetchChannelsFromM3U(m3uUrl)
             Log.d("IPTV", "Canales cargados: ${loaded.size}")
-            channels = loaded
-            selectedChannel = loaded.firstOrNull()
+            allChannels = loaded
             
-            // Generar datos EPG
+            // Generar datos EPG para todos los canales
             val epg = epgRepository.getEPGData(loaded)
             epgData = epg
             
-            // Seleccionar programa actual
-            selectedChannel?.let { channel ->
-                selectedProgram = epgRepository.getCurrentProgram(channel.id, epg.programs)
-            }
-            
-            Log.d("IPTV", "Canal seleccionado: ${selectedChannel?.name}")
-            Log.d("IPTV", "Programa actual: ${selectedProgram?.title}")
+            Log.d("IPTV", "EPG generado para ${epg.programs.size} programas")
             isLoading = false
         } catch (e: Exception) {
             Log.e("IPTV", "Error al cargar canales: ${e.message}", e)

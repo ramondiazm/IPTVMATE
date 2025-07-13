@@ -7,5 +7,6 @@ data class Channel(
     val number: Int,
     val group: String?,
     val epgId: String?,
-    val streamUrl: String // Nueva propiedad obligatoria
+    val streamUrl: String, // Nueva propiedad obligatoria
+    val isFavorite: Boolean = false // Propiedad para favoritos
 )
