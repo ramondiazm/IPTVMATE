@@ -83,37 +83,42 @@ fun TiviMateLayout(
     onChannelIndexChanged: (Int) -> Unit,
     onFocusChanged: (String) -> Unit
 ) {
-    // Estados de navegación tipo TiViMate
-    // 0 = Todo visible, 1 = Solo categorías, 2 = Solo contenido
+    // SISTEMA DE NAVEGACIÓN ROBUSTO - 3 ESTADOS CLAROS
+    // Estado 0: Menú completo abierto (íconos + texto)
+    // Estado 1: Menú colapsado a íconos + categorías visibles
+    // Estado 2: Todo colapsado, solo grid/preview
+    
     val navigationState = when (focusedArea) {
-        "menu" -> 0
-        "categories" -> 1
-        "channels", "epg" -> 2
+        "menu" -> 0           // Menú abierto completo
+        "categories" -> 1     // Menú colapsado, categorías abiertas
+        "channels", "epg" -> 2  // Todo colapsado
         else -> 0
     }
     
-    // Animaciones fluidas para el colapso total
+    // Animaciones para transiciones suaves
     val sidebarWidth by animateDpAsState(
         targetValue = when (navigationState) {
-            0 -> 180.dp  // Menú completo visible
-            1 -> 0.dp    // Menú oculto, categorías visibles
-            2 -> 0.dp    // Todo oculto
+            0 -> 180.dp  // Menú completo
+            1 -> 60.dp   // Solo íconos
+            2 -> 0.dp    // Oculto
             else -> 180.dp
         },
-        animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing),
         label = "sidebarWidth"
     )
     
     val categoriesWidth by animateDpAsState(
         targetValue = when (navigationState) {
-            0 -> 200.dp  // Categorías visibles
-            1 -> 200.dp  // Categorías visibles
-            2 -> 0.dp    // Categorías ocultas
+            0 -> 200.dp  // Visibles
+            1 -> 200.dp  // Visibles
+            2 -> 0.dp    // Ocultas
             else -> 200.dp
         },
-        animationSpec = tween(250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing),
         label = "categoriesWidth"
     )
+    
+    val isMenuCollapsed = navigationState >= 1
     
     Row(
         modifier = Modifier
@@ -123,27 +128,41 @@ fun TiviMateLayout(
                 if (keyEvent.type == KeyEventType.KeyDown) {
                     when (keyEvent.key) {
                         Key.DirectionLeft -> {
+                            // SECUENCIA INVERSA: grid -> categorías -> menú
                             when (focusedArea) {
+                                "channels", "epg" -> {
+                                    // Desde grid/EPG volver a categorías
+                                    onFocusChanged("categories")
+                                    true
+                                }
                                 "categories" -> {
+                                    // Desde categorías volver a menú
                                     onFocusChanged("menu")
                                     true
                                 }
-                                "channels", "epg" -> {
-                                    onFocusChanged("categories")
-                                    true
+                                "menu" -> {
+                                    // Ya en menú, no ir más atrás
+                                    false
                                 }
                                 else -> false
                             }
                         }
                         Key.DirectionRight -> {
+                            // SECUENCIA DIRECTA: menú -> categorías -> grid
                             when (focusedArea) {
                                 "menu" -> {
+                                    // Desde menú ir a categorías
                                     onFocusChanged("categories")
                                     true
                                 }
                                 "categories" -> {
+                                    // Desde categorías ir a grid
                                     onFocusChanged("channels")
                                     true
+                                }
+                                "channels", "epg" -> {
+                                    // Ya en grid, no ir más adelante
+                                    false
                                 }
                                 else -> false
                             }
@@ -212,15 +231,18 @@ fun TiviMateLayout(
             .focusable()
     ) {
         // Sidebar izquierdo
-        SidebarMenu(
-            menuItems = menuItems,
-            selectedIndex = selectedMenuIndex,
-            isFocused = focusedArea == "menu",
-            onItemSelected = onMenuSelected,
-            onFocusChanged = { onFocusChanged("menu") },
-            isCollapsed = navigationState == 2,
-            modifier = Modifier.width(sidebarWidth)
-        )
+        // Menú lateral - siempre visible cuando sidebarWidth > 0
+        if (sidebarWidth > 0.dp) {
+            SidebarMenu(
+                menuItems = menuItems,
+                selectedIndex = selectedMenuIndex,
+                isFocused = focusedArea == "menu",
+                onItemSelected = onMenuSelected,
+                onFocusChanged = { onFocusChanged("menu") },
+                isCollapsed = isMenuCollapsed,
+                modifier = Modifier.width(sidebarWidth)
+            )
+        }
         
         // Panel central de categorías
         if (categoriesWidth > 0.dp) {
