@@ -1049,6 +1049,7 @@ fun IPTVMainScreen() {
                 },
                 onCategorySelected = { category ->
                     selectedCategory = category
+                    selectedCategoryIndex = categories.indexOf(category)
                 },
                 onMenuSelected = { index ->
                     selectedMenuIndex = index
